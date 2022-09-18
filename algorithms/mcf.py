@@ -1,0 +1,2 @@
+def mcf(G):
+    pass

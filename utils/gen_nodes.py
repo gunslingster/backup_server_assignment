@@ -1,0 +1,52 @@
+import random
+
+def gen_vnfs(m, failure_prob_range):
+    '''
+    This function generates a dictionary of VNF nodes. Each node simply consists
+    of a key which is the node index, which has as its value another dictionary.
+    This dictionary in general can hold several attributes. In the case for VNF,
+    the only attribute it has is a failure probability.
+    
+    :param m: The number of VNF nodes
+    :param failure_prob_range: A list which represents the failure probability range
+    :returns: Returns a dictionary of nodes with string attributes. 
+    '''
+    
+    vnfs = {}
+    for i in range(m):
+        lower_failure_bound = failure_prob_range[0]
+        upper_failure_bound = failure_prob_range[1]
+        vnfs[i] = {"failure_prob": random.uniform(lower_failure_bound, upper_failure_bound)}
+    return vnfs
+
+def gen_servers(n, failure_prob_range, r):
+    '''
+    This function generates a dictionary of server nodes. Each node simply consists
+    of a key which is the node index, which has as its value another dictionary.
+    This dictionary in general can hold several attributes. In the case for server,
+    it will have two attributes. A failure probability, and a resource capacity.
+    
+    :param n: The number of server nodes
+    :param failure_prob_range: A list which represents the failure probability range
+    :param r: resource capacity, number of VNF the server can backup
+    :returns: Returns a dictionary of nodes with string attributes. 
+    '''
+    servers = {}
+    for i in range(n):
+        lower_failure_bound = failure_prob_range[0]
+        upper_failure_bound = failure_prob_range[1]
+        servers[i] = {'failure_prob': random.uniform(lower_failure_bound, upper_failure_bound)}
+        servers[i]['r'] = r
+    return servers
+
+def gen_graph(vnfs, servers):
+    '''
+    This will return a dictionary with represents a bipartite graph. The two sets
+    of nodes in the graph are the VNFs and servers.
+
+    :param vnfs: VNF nodes
+    :param servers: Server nodes
+    :returns: Bipartite graph
+    '''
+    graph = {'vnfs': vnfs, 'servers': servers}
+    return graph
