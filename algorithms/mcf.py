@@ -1,5 +1,11 @@
+import sys
+sys.path.append('../')
+
 import networkx as nx
 import math
+import copy
+from utils.helper_functions import * 
+
 
 def residualNetwork(G, path):
     '''
@@ -36,12 +42,12 @@ def succShortestPaths(G, m, n):
     shortest_paths = []
     for num_iters in range(m):
         # Can use dijkstra
-        shortest_path = nx.dijkstra_path(R, 0, m+n+1)
+        shortest_path = nx.bellman_ford_path(R, 0, m+n+1)
         shortest_paths.append(shortest_path)
         R = residualNetwork(R, shortest_path)
     return shortest_paths
 
-def findAssignment(paths):
+def findAssignment(paths, m):
     '''
     Takes the list of shortest paths and analyzes it to find the optimal backup
     server assignment.
@@ -52,10 +58,19 @@ def findAssignment(paths):
     assignment = []
     for path in paths:
         for i in range(1, len(path)-2):
-            if ((path[i+1], path[i]) in assignment):
-                assignment.remove((path[i+1], path[i]))
+            if ([path[i+1], path[i]] in assignment):
+                assignment.remove([path[i+1], path[i]])
             else:
-                assignment.append((path[i], path[i+1]))
+                assignment.append([path[i], path[i+1]])
+
+    # We add this step because in our networkx graph the vnf are nodes [1, m], 
+    # and the servers are nodes [m+1, m+n]. In our original bipartite graph,
+    # both the vnf and servers started at node 0. So you can have an assignement 
+    # of [0,0] for instance. So we just subtract the appropriate constant from
+    # node index.
+    for pair in assignment:
+        pair[0] -= 1
+        pair[1] -= (m+1)
     return assignment
 
 def calcSfcAvailability(G, assignment):
@@ -70,17 +85,11 @@ def calcSfcAvailability(G, assignment):
     m = len(vnfs.items())
     n = len(servers.items())
     availability = 1
-    assignment = [list(tup) for tup in assignment]
 
-    # This produces the same assignment but with the original offsets in the 
-    # bipartite graph
-    # For instance, you could have (0,0) which means VNF 0 matches to server 0
-    for tup in assignment:
-        tup[0] -= 1
-        tup[1] -= (m+1)
+    for pair in assignment:
         # Now we just calculate availability
-        vnf = tup[0]
-        server = tup[1]
+        vnf = pair[0]
+        server = pair[1]
         availability *= (1 - vnfs[vnf]['failure_prob'] * servers[server]['failure_prob'])
     return availability
 
@@ -102,47 +111,22 @@ def mcf(G):
     m = len(G['vnfs'].items())    # number of VNFs
     n = len(G['servers'].items()) # number of servers
     r = G['servers'][0]['r']      # resource capacity
-    vnfs = G['vnfs']
-    servers = G['servers']
+    G_ = copy.deepcopy(G)
+    vnfs = G_['vnfs']
+    servers = G_['servers']
 
-    def convert_to_flow_network(G):
-        '''
-        Convert the bipartite graph into a networkx digraph
-
-        :param G: Bipartite graph
-        :returns: A networkx digraph
-        '''
-
-        # First we populate the graph with nodes
-        D = nx.DiGraph()
-        num_nodes = m + n + 2     # Add 2 for source and sink
-        D.add_node(0, layer='source', demand=-m)    # Add source node
-        for i in range(m):                          # Add vnf nodes
-            D.add_node(1+i, layer='vnf')
-        for i in range(n):                          # Add server nodes
-            D.add_node(1+m+i, layer='server')
-        D.add_node(1+m+n, layer='sink', demand=m)   # Add sink node
-
-        # Now we populate the graph with edges
-        # First add edges from source to VNF nodes
-        for node in range(1, m+1):
-            D.add_edge(0, node, weight=0, capacity=1)
-        # Now add edges from each VNF to each server
-        for i in range(1, m+1):
-            p1 = vnfs[i-1]['failure_prob']
-            for j in range(m+1, m+n+1):
-                p2 = servers[j-m-1]['failure_prob']
-                w = int(math.log(1 / (1-p1*p2)) * 10e10)
-                D.add_edge(i, j, weight=w, capacity=1)
-        # Now add edges from each server to the sink
-        for i in range(m+1, m+n+1):
-            D.add_edge(i, m+n+1, weight=0, capacity=r)
-        return D
-    
-    D = convert_to_flow_network(G)
+    D = convert_to_flow_network(G_)
     shortest_paths = succShortestPaths(D, m, n)
-    assignment = findAssignment(shortest_paths)
-    availability = calcSfcAvailability(G, assignment)
+    assignment = findAssignment(shortest_paths, m)
+    availability = calcSfcAvailability(G_, assignment)
     return {'mapping': assignment, 'availability': availability}
 
-
+def mcf2(G):
+    G_ = copy.deepcopy(G)
+    m = len(G['vnfs'].items())
+    D = convert_to_flow_network(G_)
+    flow_dict = nx.min_cost_flow(D)
+    assignment = convert_flow_dict_to_assignment(flow_dict, m)
+    availability = calcSfcAvailability(G_, assignment)
+    return {'mapping': assignment, 'availability': availability}
+    

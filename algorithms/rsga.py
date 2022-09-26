@@ -1,3 +1,5 @@
+import copy
+
 def rsga(G):
     '''
     Reverse Sorted greedy algorithm. This is a simple greedy algorithm that sorts
@@ -14,8 +16,9 @@ def rsga(G):
     '''
     
     result = {'mapping': [], 'availability': 1}
-    vnfs = G['vnfs']
-    servers = G['servers']
+    G_ = copy.deepcopy(G)
+    vnfs = G_['vnfs']
+    servers = G_['servers']
 
     # Sort VNFs and servers by their failure probability
     sorted_vnfs = sorted(vnfs.items(), key=lambda kv: kv[1]['failure_prob'], reverse=True)

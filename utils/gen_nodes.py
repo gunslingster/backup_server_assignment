@@ -39,14 +39,19 @@ def gen_servers(n, failure_prob_range, r):
         servers[i]['r'] = r
     return servers
 
-def gen_graph(vnfs, servers):
+def gen_graph(n, m, r, vnf_fail_prob, server_fail_prob):
     '''
     This will return a dictionary with represents a bipartite graph. The two sets
     of nodes in the graph are the VNFs and servers.
 
-    :param vnfs: VNF nodes
-    :param servers: Server nodes
-    :returns: Bipartite graph
+    :param m: number of VNF
+    :param m: number of servers
+    :param r: resource capacity
+    :param vnf_fail_prob: VNF failure probability range
+    :param server_fail_prob: Server failure probability range
+    :returns: Bipartite graph represented as a dictionary
     '''
+    vnfs = gen_vnfs(m, vnf_fail_prob)
+    servers = gen_servers(n, server_fail_prob, r)
     graph = {'vnfs': vnfs, 'servers': servers}
     return graph
