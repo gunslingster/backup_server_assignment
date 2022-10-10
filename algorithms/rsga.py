@@ -2,11 +2,9 @@ import copy
 
 def rsga(G):
     '''
-    Reverse Sorted greedy algorithm. This is a simple greedy algorithm that sorts
+    Sorted greedy algorithm. This is a simple greedy algorithm that sorts
     both the VNFs and Backup servers by failure probability and then assigns 
-    them in the reverse order. In other words, the vnf with highest failure probability
-    will be assigned to backup server of lowest failure probability. 
-    The algorithm will account for r > 1.
+    them in that order. The algorithm will account for r > 1.
 
     :param G: This represents a complete bipartite graph between the VNF and
               backup server nodes. It is a list of two dictionaries. 
@@ -21,7 +19,7 @@ def rsga(G):
     servers = G_['servers']
 
     # Sort VNFs and servers by their failure probability
-    sorted_vnfs = sorted(vnfs.items(), key=lambda kv: kv[1]['failure_prob'], reverse=True)
+    sorted_vnfs = sorted(vnfs.items(), key=lambda kv: kv[1]['failure_prob'])
     sorted_servers = sorted(servers.items(), key=lambda kv: kv[1]['failure_prob'])
 
     # Iterate though the VNFs and match with the highest available server
