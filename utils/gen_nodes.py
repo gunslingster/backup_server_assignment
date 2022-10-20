@@ -13,9 +13,9 @@ def gen_vnfs(m, failure_prob_range):
     '''
     
     vnfs = {}
+    lower_failure_bound = failure_prob_range[0]
+    upper_failure_bound = failure_prob_range[1]
     for i in range(m):
-        lower_failure_bound = failure_prob_range[0]
-        upper_failure_bound = failure_prob_range[1]
         vnfs[i] = {"failure_prob": random.uniform(lower_failure_bound, upper_failure_bound)}
     return vnfs
 
@@ -39,7 +39,7 @@ def gen_servers(n, failure_prob_range, r):
         servers[i]['r'] = r
     return servers
 
-def gen_graph(n, m, r, vnf_fail_prob, server_fail_prob):
+def gen_graph(m, n, r, vnf_fail_prob, server_fail_prob):
     '''
     This will return a dictionary with represents a bipartite graph. The two sets
     of nodes in the graph are the VNFs and servers.
